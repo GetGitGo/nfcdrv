@@ -23,7 +23,7 @@ static int ecctype;
 
 
 /* Current system has already gone to sync mode */
-#define NFC_IS_SYNC(_host) (nfc_con & NFC_CON_NF_MODE_MASK)
+#define NFC_IS_SYNC (nfc_con & NFC_CON_NF_MODE_MASK)
 static unsigned long nfc_con;
 
 static unsigned int addr_cycle;
@@ -35,7 +35,7 @@ static unsigned int dma_buffer;
 static char *buforg;
 static char *buffer;
 
-static int  version;
+static int  nfc_version;
 
 static uint pagesize = DEFAULT_PAGESIZE;
 module_param(w_lcnt, uint, S_IRUGO);
@@ -61,8 +61,6 @@ static uint chipselect = 0;
 module_param(chipselect, uint, S_IRUGO);
 MODULE_PARM_DESC(uint,
 		 "nfc chip select:0,1");
-
-static struct nfc_host *host = NULL; 
 
 /*
 * nfc_contoller_enable - Enable or disable nand flash controller
@@ -135,7 +133,7 @@ static void nfc_dma_transfer(int todev)
 * @param 
 * @return 
 */
-static int nfc_send_cmd_readid(struct nfc_host *host)
+static int nfc_send_cmd_readid( void )
 {
 	unsigned int regval;
 
@@ -165,7 +163,7 @@ static int nfc_send_cmd_readid(struct nfc_host *host)
 * @param 
 * @return 
 */
-static int nfc_send_cmd_status(struct nfc_host *host)
+static int nfc_send_cmd_status( void )
 {
 	unsigned int regval;
 
@@ -271,13 +269,7 @@ int nfc_dev_init( void )
 	int result = 0;
 	unsigned int regval;
 
-	host = kcalloc(1,sizeof(struct nfc_host), GFP_KERNEL);
-	if (!host) {
-		PR_BUG("failed to allocate device structure.\n");
-		return -ENOMEM;
-	}
-
-	version = nfc_read( NFC_VERSION);
+	nfc_version = nfc_read( NFC_VERSION);
 
 	addr_value[0] = 0;
 	addr_value[1] = 0;
