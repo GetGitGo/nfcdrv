@@ -91,18 +91,18 @@ static void nfc_dma_transfer(int todev)
 	unsigned long reg_val;
 	unsigned int dma_addr = (unsigned int)dma_buffer;
 
-	nfc_write(host, dma_addr, NFC_DMA_ADDR_DATA);
+	nfc_write( dma_addr, NFC_DMA_ADDR_DATA);
 
 	dma_addr += NFC_DMA_ADDR_OFFSET;
-	nfc_write(host, dma_addr, NFC_DMA_ADDR_DATA1);
+	nfc_write( dma_addr, NFC_DMA_ADDR_DATA1);
 
 	dma_addr += NFC_DMA_ADDR_OFFSET;
-	nfc_write(host, dma_addr, NFC_DMA_ADDR_DATA2);
+	nfc_write( dma_addr, NFC_DMA_ADDR_DATA2);
 
 	dma_addr += NFC_DMA_ADDR_OFFSET;
-	nfc_write(host, dma_addr, NFC_DMA_ADDR_DATA3);
+	nfc_write( dma_addr, NFC_DMA_ADDR_DATA3);
 
-	nfc_write(host, NFC_DMA_PARA_DATA_RW_EN, NFC_DMA_PARA);
+	nfc_write( NFC_DMA_PARA_DATA_RW_EN, NFC_DMA_PARA);
 
 	reg_val = (NFC_DMA_CTRL_DMA_START
 		| NFC_DMA_CTRL_BURST4_EN
@@ -116,11 +116,11 @@ static void nfc_dma_transfer(int todev)
 	if (todev)
 		reg_val |= NFC_DMA_CTRL_WE;
 
-	nfc_write(host, reg_val, NFC_DMA_CTRL);
+	nfc_write( reg_val, NFC_DMA_CTRL);
 
 	do {
 		unsigned int timeout = 0xF0000000;
-		while ((nfc_read(host, NFC_DMA_CTRL))
+		while ((nfc_read( NFC_DMA_CTRL))
 			& NFC_DMA_CTRL_DMA_START && timeout) {
 			_cond_resched();
 			timeout--;
@@ -139,9 +139,9 @@ static int nfc_send_cmd_readid(struct nfc_host *host)
 {
 	unsigned int regval;
 
-	nfc_write(host, NFC_NANDINFO_LEN, NFC_DATA_NUM);
-	nfc_write(host, NAND_CMD_READID, NFC_CMD);
-	nfc_write(host, 0, NFC_ADDRL);
+	nfc_write( NFC_NANDINFO_LEN, NFC_DATA_NUM);
+	nfc_write( NAND_CMD_READID, NFC_CMD);
+	nfc_write( 0, NFC_ADDRL);
 
 	/* no need to config NFC_OP_WAIT_READY_EN, here not config. */
 	regval = NFC_OP_CMD1_EN
@@ -151,7 +151,7 @@ static int nfc_send_cmd_readid(struct nfc_host *host)
 		    << NFC_OP_NF_CS_SHIFT)
 		 | (1 << NFC_OP_ADDR_CYCLE_SHIFT);
 
-	nfc_write(host, regval, NFC_OP);
+	nfc_write( regval, NFC_OP);
 
 	addr_cycle = 0x0;
 
@@ -169,8 +169,8 @@ static int nfc_send_cmd_status(struct nfc_host *host)
 {
 	unsigned int regval;
 
-	nfc_write(host, NFC_NANDINFO_LEN, NFC_DATA_NUM);
-	nfc_write(host, NAND_CMD_STATUS, NFC_CMD);
+	nfc_write( NFC_NANDINFO_LEN, NFC_DATA_NUM);
+	nfc_write( NAND_CMD_STATUS, NFC_CMD);
 
 	/* no need config NFC_OP_WAIT_READY_EN, here not config */
 	regval = NFC_OP_CMD1_EN
@@ -178,7 +178,7 @@ static int nfc_send_cmd_status(struct nfc_host *host)
 		 | ((chipselect & NFC_OP_NF_CS_MASK)
 		    << NFC_OP_NF_CS_SHIFT);
 
-	nfc_write(host, regval, NFC_OP);
+	nfc_write( regval, NFC_OP);
 
 	WAIT_CONTROLLER_FINISH();
 
@@ -194,7 +194,7 @@ static int nfc_send_cmd_reset( void )
 {
 	unsigned int regval;
 
-	nfc_write(host, NAND_CMD_RESET, NFC_CMD);
+	nfc_write( NAND_CMD_RESET, NFC_CMD);
 
 	/* need to config NFC_OP_WAIT_READY_EN */
 	regval = NFC_OP_CMD1_EN
@@ -202,7 +202,7 @@ static int nfc_send_cmd_reset( void )
 		    << NFC_OP_NF_CS_SHIFT)
 		 | NFC_OP_WAIT_READY_EN);
 
-	nfc_write(host, regval, NFC_OP);
+	nfc_write( regval, NFC_OP);
 
 	WAIT_CONTROLLER_FINISH();
 
@@ -277,7 +277,7 @@ int nfc_dev_init( void )
 		return -ENOMEM;
 	}
 
-	version = nfc_read(host, NFC_VERSION);
+	version = nfc_read( NFC_VERSION);
 
 	addr_value[0] = 0;
 	addr_value[1] = 0;
@@ -312,13 +312,13 @@ int nfc_dev_init( void )
 		     << NFC_CON_ECCTYPE_SHIFT))
 		& (~NFC_CON_RANDOMIZER_EN);
 
-	nfc_write(host,
+	nfc_write(
 		(SET_NFC_PWIDTH(CONFIG_NFC_W_LCNT,
 				     CONFIG_NFC_R_LCNT,
 				     CONFIG_NFC_RW_HCNT)),
 		NFC_PWIDTH);
 
-	regval = nfc_read(host, NFC_BOOT_CFG);
+	regval = nfc_read( NFC_BOOT_CFG);
 	/* check if chip is sync mode. */
 	if (regval & NFC_BOOT_CFG_SYC_NAND_PAD) {
 		/*
@@ -327,7 +327,7 @@ int nfc_dev_init( void )
 		nfc_con |= NFC_CON_NF_MODE_TOGGLE;
 
 		/* set synchronous clock and timing. */
-		nfc_controller_enable(host, ENABLE);
+		nfc_controller_enable( ENABLE);
 	}
 
 	memset((char *)chip->buf_base, 0xff, NFC_BUFFER_BASE_ADDRESS_LEN);
@@ -423,13 +423,13 @@ static ssize_t nfc_write(struct file *file, const char __user *buffer,
 {
 	size_t ret;
 
-	nfc_write(host, addr_value[0] & 0xffff0000, NFC_ADDRL);
-	nfc_write(host, addr_value[1], NFC_ADDRH);
-	nfc_write(host, 
+	nfc_write( addr_value[0] & 0xffff0000, NFC_ADDRL);
+	nfc_write( addr_value[1], NFC_ADDRH);
+	nfc_write( 
         ((NAND_CMD_STATUS << 16) | (NAND_CMD_PAGEPROG << 8) | NAND_CMD_SEQIN),
 		NFC_CMD);
 
-	nfc_dma_transfer(host, 1);
+	nfc_dma_transfer( 1);
 
 	return (ssize_t)count;
 }
@@ -471,16 +471,16 @@ static long nfc_ioctl(struct file* file, unsigned int cmd, unsigned long arg)
 static struct file_operations nfc_fops =
 {
     .owner      = THIS_MODULE,
-    .open       = nfc_fo_open   ,
-    .release    = nfc_close  ,
-    .write      = nfc_write  ,
-    .unlocked_ioctl = nfc_ioctl  ,
+    .open       = nfc_fo_open,
+    .release    = nfc_close,
+    .write      = nfc_write,
+    .unlocked_ioctl = nfc_ioctl,
 };
 
 static struct miscdevice nfc_dev =
 {
     .minor   = MISC_DYNAMIC_MINOR,
-    .name    = "nfc"    ,
+    .name    = "nfc",
     .fops    = &nfc_fops,
 };
 
