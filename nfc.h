@@ -37,20 +37,11 @@ extern "C" {
 #define PERI_CRG52_CLK_EN			(1U << 1)
 #define PERI_CRG52_CLK_SEL_198M		(1U << 2)
 
-#define CONFIG_NFC_REG_BASE_ADDRESS            (0x10000000)
-#define CONFIG_NFC_BUFFER_BASE_ADDRESS         (0x50000000)
+#define NFC_REG_BASE_ADDRESS            (0x10000000)
+#define NFC_BUFFER_BASE_ADDRESS         (0x50000000)
 
-#define DEFAULT_NFC_W_LCNT          (0x05)
-#define MIN_NFC_W_LCNT              (0x01)
-#define MAX_NFC_W_LCNT              (0x0f)
 
-#define DEFAULT_NFC_R_LCNT          (7)
-#define MIN_NFC_R_LCNT              (0x01)
-#define MAX_NFC_R_LCNT              (0x0f)
-
-#define DEFAULT_NFC_RW_HCNT                    (3)
-
-#define NFC_MAX_CHIP                    (1)
+#define NFC_MAX_CHIP                 (1)
 
 #define NFC_REG_SIZE                 (0x100)
 #define NFC_BUFFER_SIZE              (8192 + 1024)
@@ -60,51 +51,174 @@ extern "C" {
 #define NFC_ADDR_CYCLE_MASK                      0x4
 #define NFC_DMA_ADDR_OFFSET                      4096
 
-/*----------- register ------------*/
+/*----------- register NFC_CON ------------*/
 
 #define NFC_CON                                 0x00
-#define NFC_CON_OP_MODE_NORMAL      (1U << 0)
-#define NFC_CON_PAGEISZE_SHIFT      (1)
+
+#define NFC_CON_OP_MODE_SHIFT       (0)
+#define NFC_CON_OP_MODE_MASK        (0x01)
+#define OP_MODE_BOOT        (0x00)
+#define OP_MODE_NORMAL      (0x01)
+
+#define NFC_CON_PAGE_SIZE_SHIFT     (1)
 #define NFC_CON_PAGESIZE_MASK       (0x07)
-#define NFC_CON_BUS_WIDTH           (1U << 4)
-#define NFC_CON_READY_BUSY_SEL      (1U << 8)
+#define PAGESIZE_2K     0x01
+#define PAGESIZE_4K     0x02
+#define PAGESIZE_8K     0x03
+#define PAGESIZE_16K    0x04
+
+#define NFC_CON_BUS_WIDTH_SHIFT     (4)
+#define NFC_CON_BUS_WIDTH_MASK      (0x01)
+#define BUS_WIDTH_8BIT      0
+#define BUS_WIDTH_RESERVED  1
+
+#define NFC_CON_CS_CTRL_SHIFT       (7)
+#define NFC_CON_CS_CTRL_MASK        (0x01)
+#define CS_CTRL_BUSY_0      0
+#define CS_CTRL_BUSY_1      1
+
+#define NFC_CON_RB_SEL_SHIFT       (8)
+#define NFC_CON_RB_SEL_MASK        (0x01)
+#define RB_SEL_SHARED       0
+#define RB_SEL_EXCLUDED     1
+
 #define NFC_CON_ECCTYPE_SHIFT       (9)
 #define NFC_CON_ECCTYPE_MASK        (0x0f)
-#define NFC_CON_RANDOMIZER_EN       (1 << 14)
+#define ECC_TYPE_NONE   0x00
+#define ECC_TYPE_8BIT   0x02
+#define ECC_TYPE_24BIT  0x04
+#define ECC_TYPE_40BIT  0x05
+#define ECC_TYPE_64BIT  0x06
+
+#define NFC_CON_RANDOMIZER_EN_SHIFT (14)
+#define NFC_CON_RANDOMIZER_EN_MASK  (0x01)
+#define RANDOMIZER_EN_CLOSE 0
+#define RANDOMIZER_EN_OPEN  1
+
+/* ?: reserved in manual, why here? */
+
 #define NFC_CON_NF_MODE_SHIFT       15
 #define NFC_CON_NF_MODE_MASK        (3 << NFC_CON_NF_MODE_SHIFT)
+
 #define NFC_CON_NF_MODE_TOGGLE      (1 << NFC_CON_NF_MODE_SHIFT)
 #define NFC_CON_NF_MODE_ONFI_23     (2 << NFC_CON_NF_MODE_SHIFT)
 #define NFC_CON_NF_MODE_ONFI_30     (3 << NFC_CON_NF_MODE_SHIFT)
 
-#define NFC_PAGESIZE_2K    0x01
-#define NFC_PAGESIZE_4K    0x02
-#define NFC_PAGESIZE_8K    0x03
-#define NFC_PAGESIZE_16K   0x04
+
+/*----------- register NFC_PWIDTH------------*/
 
 #define NFC_PWIDTH                              0x04
-#define SET_NFC_PWIDTH(_w_lcnt, _r_lcnt, _rw_hcnt) \
-	((_w_lcnt) | (((_r_lcnt) & 0x0F) << 4) | (((_rw_hcnt) & 0x0F) << 8))
+
+#define NFC_PWIDTH_W_LCNT_SHIFT         (0)
+#define NFC_PWIDTH_W_LCNT_MASK          (0x0f)
+#define DEFAULT_W_LCNT          (0x05)
+#define MIN_W_LCNT              (0x01)
+#define MAX_W_LCNT              (0x0f)
+
+#define NFC_PWIDTH_R_LCNT_SHIFT         (4)
+#define NFC_PWIDTH_R_LCNT_MASK          (0x0f)
+#define DEFAULT_R_LCNT          (7)
+#define MIN_R_LCNT              (0x01)
+#define MAX_R_LCNT              (0x0f)
+
+#define NFC_PWIDTH_RW_HCNT_SHIFT        (8)
+#define NFC_PWIDTH_RW_HCNT_MASK         (0x0f)
+#define DEFAULT_RW_HCNT          (3)
+#define MIN_RW_HCNT              (0x01)
+#define MAX_RW_HCNT              (0x0f)
+
+/*----------- register NFC_OPIDLE ------------*/
+
+#define NFC_OPIDLE                              0x08
+
+#define NFC_OPIDLE_FB_WAIT_SHIFT      (20)
+#define NFC_OPIDLE_FB_WAIT_MASK       (0x0f)
+#define DEFAULT_FRB_WAIT          (3)
+#define MIN_FRB_WAIT              (0x00)
+#define MAX_FRB_WAIT              (0x0f)
+
+#define NFC_OPIDLE_CMD1_WAIT_SHIFT    (16)
+#define NFC_OPIDLE_CMD1_WAIT_MASK     (0x0f)
+#define DEFAULT_CMD1_WAIT          (3)
+#define MIN_CMD1_WAIT              (0x00)
+#define MAX_CMD1_WAIT              (0x0f)
+
+#define NFC_OPIDLE_ADDR_WAIT_SHIFT    (12)
+#define NFC_OPIDLE_ADDR_WAIT_MASK     (0x0f)
+#define DEFAULT_ADDR_WAIT          (3)
+#define MIN_ADDR_WAIT              (0x00)
+#define MAX_ADDR_WAIT              (0x0f)
+
+#define NFC_OPIDLE_CMD2_WAIT_SHIFT    (4)
+#define NFC_OPIDLE_CMD2_WAIT_MASK     (0x0f)
+#define DEFAULT_CMD2_WAIT          (3)
+#define MIN_CMD2_WAIT              (0x00)
+#define MAX_CMD2_WAIT              (0x0f)
+
+#define NFC_OPIDLE_WAIT_READY_WAIT_SHIFT    (0)
+#define NFC_OPIDLE_WAIT_READY_WAIT_MASK     (0x0f)
+#define DEFAULT_WAIT_READY_WAIT    (3)
+#define MIN_WAIT_READY_WAIT        (0x00)
+#define MAX_WAIT_READY_WAIT        (0x0f)
+
+/*----------- register NFC_CMD ------------*/
 
 #define NFC_CMD                                 0x0C
+
+#define NFC_CMD_CMD1_SHIFT      (0)
+#define NFC_CMD_CMD1_MASK       (0xff)
+
+#define NFC_CMD_CMD2_SHIFT      (8)
+#define NFC_CMD_CMD2_MASK       (0xff)
+
+#define NFC_CMD_READ_STATUS_CMD_SHIFT      (16)
+#define NFC_CMD_READ_STATUS_CMD_MASK       (0xff)
+
+/*----------- register NFC_ADDRL ------------*/
+
 #define NFC_ADDRL                               0x10
+
+#define DEFAULT_ADDRL                (0)
+
+/*----------- register NFC_ADDRH ------------*/
+
 #define NFC_ADDRH                               0x14
+#define NFC_ADDRH_ADDR_H_SHIFT      (0)
+#define NFC_ADDRH_ADDR_H_MASK       (0xff)
+
+#define DEFAULT_ADDRH                (0)
+
+/*----------- register NFC_DATA_NUM ------------*/
+
 #define NFC_DATA_NUM                            0x18
 
+#define DEFAULT_NFC_DATA_NUM        (2048)
+#define MIN_NFC_DATA_NUM            (0)
+#define MAX_NFC_DATA_NUM            (9344)
+
+
+/*----------- register NFC_OP ------------*/
+
 #define NFC_OP                                  0x1C
-#define NFC_OP_READ_STATUS_EN       (1U << 0)
-#define NFC_OP_READ_DATA_EN         (1U << 1)
-#define NFC_OP_WAIT_READY_EN        (1U << 2)
-#define NFC_OP_CMD2_EN              (1U << 3)
-#define NFC_OP_WRITE_DATA_EN        (1U << 4)
-#define NFC_OP_ADDR_EN              (1U << 5)
-#define NFC_OP_CMD1_EN              (1U << 6)
-#define NFC_OP_NF_CS_SHIFT          (7)
-#define NFC_OP_NF_CS_MASK           (3)
+
 #define NFC_OP_ADDR_CYCLE_SHIFT     (9)
-#define NFC_OP_ADDR_CYCLE_MASK      (7)
-#define NFC_OP_READID_EN            (1U << 12)
-#define NFC_OP_RW_REG_EN            (1U << 13)
+#define NFC_OP_ADDR_CYCLE_MASK      (0x07)
+
+#define NFC_OP_NF_CS_SHIFT          (7)
+#define NFC_OP_NF_CS_MASK           (0x03)
+
+
+#define READ_STATUS_EN       (1U << 0)
+#define READ_DATA_EN         (1U << 1)
+#define WAIT_READY_EN        (1U << 2)
+#define CMD2_EN              (1U << 3)
+#define WRITE_DATA_EN        (1U << 4)
+#define ADDR_EN              (1U << 5)
+#define CMD1_EN              (1U << 6)
+#define READID_EN            (1U << 12)
+#define RW_REG_EN            (1U << 13)
+
+/*----------- register NFC_STATUS ------------*/
 
 #define NFC_STATUS                               0x20
 
@@ -344,14 +458,17 @@ do { \
 		PR_ERR("Wait NAND controller finish timeout.\n"); \
 } while (0)
 
-#define nfc_read(_reg) \
-	readl((char *)_iobase + (_reg))
+#define nfc_read(reg) \
+	readl((char *)reg_base + (reg))
 
-#define nfc_write(_value, _reg) \
-	writel((_value), (char *)_iobase + (_reg))
+#define nfc_write(value, reg) \
+	writel((value), (char *)reg_base + (reg))
 
-#define HINFC_CMD_SEQ(_cmd0, _cmd1)        \
-	(((_cmd0) & 0xFF) | ((_cmd1) & 0xFF) << 8)
+#define NFC_CMD_SEQ(cmd0, cmd1)        \
+	(((cmd0) & 0xFF) | ((cmd1) & 0xFF) << 8)
+
+#define GET_PAGE_INDEX \
+    ((addr_l >> 16) | (addr_h << 16))
 
 #define DUMP_DATA(_p, _n) do { \
 	int ix; \
