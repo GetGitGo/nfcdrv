@@ -12,5 +12,5 @@ default:
 
 clean:
 	@make -C $(LINUX_ROOT) M=$(PWD) clean 
-	@rm -f pwm_write pwm_test *.bak
+	@rm -f nfc_test *.bak
 
