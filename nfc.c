@@ -113,12 +113,12 @@ static void nfc_controller_enable(int enable)
 }
 
 /*
-* nfc_dma_transfer - read or write data from or to device via DMA
+* nfc_dma_tx- read or write data from or to device via DMA
 *
 * @param todev: read from (0) or write to (1)
 *
 */
-static void nfc_dma_transfer(int todev)
+static void nfc_dma_tx(int todev)
 {
 	unsigned long reg_val;
 	unsigned int dma_addr = (unsigned int)dma_buffer;
@@ -430,12 +430,12 @@ static ssize_t nfcdrv_write(struct file *file, const char __user *usr_buffer,
 
     for ( i = 0; i < count/pagesize; i++ ){
         memcpy( buffer, usr_buffer+i*pagesize, pagesize); 
-	    nfc_dma_transfer( 1 );
+	    nfc_dma_tx( 1 );
     }
 
     if ( count%pagesize ){
         memcpy( buffer, usr_buffer+i*pagesize, count%pagesize); 
-	    nfc_dma_transfer( 1 );
+	    nfc_dma_tx( 1 );
     }
 
 	return (ssize_t)count;
