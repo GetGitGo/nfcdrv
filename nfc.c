@@ -118,7 +118,7 @@ static void nfc_controller_enable(int enable)
 * @param todev: read from (0) or write to (1)
 *
 */
-static void nfc_dma_tx(int todev)
+static void nfc_dma_tx( void )
 {
 	unsigned long reg_val;
 	unsigned int dma_addr = (unsigned int)dma_buffer;
@@ -128,6 +128,7 @@ static void nfc_dma_tx(int todev)
 	nfc_write( NFC_OP_PARA_DATA_RW_EN, NFC_OP_PARA);
 
 	reg_val = DMA_START 
+		    | DMA_WR_EN
             | BURST4_EN 
             | BURST8_EN 
             | BURST16_EN
@@ -135,8 +136,6 @@ static void nfc_dma_tx(int todev)
 		    | ((addr_cycle == 4 ? 1 : 0) << NFC_DMA_CTRL_ADDR_NUM_SHIFT)
 		    | (chipselect << NFC_DMA_CTRL_CS_SHIFT);
 
-	if (todev)
-		reg_val |= DMA_WR_EN;
 
 	nfc_write( reg_val, NFC_DMA_CTRL);
 
@@ -161,6 +160,10 @@ static int nfc_send_cmd_readid( void )
 {
 	unsigned int regval;
 
+    DBG_OUT("entry\n");
+
+    writel(0, buf_base);
+
 	nfc_write( NFC_NANDINFO_LEN, NFC_DATA_NUM);
 	nfc_write( NAND_CMD_READID, NFC_CMD);
 	nfc_write( 0, NFC_ADDRL);
@@ -178,7 +181,7 @@ static int nfc_send_cmd_readid( void )
 
 	WAIT_CONTROLLER_FINISH();
 
-	return 0;
+    return readl(buf_base);
 }
 
 /*
@@ -189,6 +192,10 @@ static int nfc_send_cmd_readid( void )
 static int nfc_send_cmd_status( void )
 {
 	unsigned int regval;
+
+    DBG_OUT("entry\n");
+
+    writel(0, buf_base);
 
 	nfc_write( NFC_NANDINFO_LEN, NFC_DATA_NUM);
 	nfc_write( NAND_CMD_STATUS, NFC_CMD);
@@ -202,7 +209,7 @@ static int nfc_send_cmd_status( void )
 
 	WAIT_CONTROLLER_FINISH();
 
-	return 0;
+    return readl(buf_base);
 }
 
 /*
@@ -213,6 +220,8 @@ static int nfc_send_cmd_status( void )
 static int nfc_send_cmd_reset( void )
 {
 	unsigned int regval;
+
+    DBG_OUT("entry\n");
 
 	nfc_write( NAND_CMD_RESET, NFC_CMD);
 
@@ -235,6 +244,8 @@ static int nfc_send_cmd_reset( void )
 */
 static int nfc_init( void )
 {
+
+    DBG_OUT("entry\n");
 
 	nfc_controller_enable(1);
 
@@ -392,6 +403,8 @@ static int nfcdrv_proc_open(struct inode *inode, struct file *file)
 */
 static int nfcdrv_open(struct inode* inode, struct file* file)
 {
+    DBG_OUT("entry\n");
+
     return 0 ;
 }
 
@@ -404,6 +417,8 @@ static int nfcdrv_open(struct inode* inode, struct file* file)
 */
 static int  nfcdrv_close(struct inode* inode, struct file* file)
 {
+    DBG_OUT("entry\n");
+
     return 0;
 }
 
@@ -421,22 +436,87 @@ static ssize_t nfcdrv_write(struct file *file, const char __user *usr_buffer,
 {
     int i;
 
+    char * dst = buffer;
+    char * src = (char * )usr_buffer;
+    size_t size = count+4;
 
-	nfc_write( addr_l & 0xffff0000, NFC_ADDRL);
-	nfc_write( addr_h, NFC_ADDRH);
-	nfc_write( 
-        ((NAND_CMD_STATUS << 16) | (NAND_CMD_PAGEPROG << 8) | NAND_CMD_SEQIN),
-		NFC_CMD);
+    DBG_OUT("entry\n");
 
-    for ( i = 0; i < count/pagesize; i++ ){
-        memcpy( buffer, usr_buffer+i*pagesize, pagesize); 
-	    nfc_dma_tx( 1 );
+    if( usr_buffer == NULL ){
+        DBG_OUT("usr_buffer NULL!\n");
+        return -1;
     }
 
-    if ( count%pagesize ){
-        memcpy( buffer, usr_buffer+i*pagesize, count%pagesize); 
-	    nfc_dma_tx( 1 );
+    if( count == 0 ){
+        DBG_OUT("count 0!\n");
+        return -1;
     }
+
+    if( count > MAX_FRAME_SIZE ){
+        DBG_OUT("count exceed MAX_FRAME_SIZE(%d)!\n", MAX_FRAME_SIZE);
+        return -1;
+    }
+
+	nfc_write( addr_h, NFC_ADDRH );
+
+    DBG_OUT("src:%p size:%x\n", src, size);
+
+    if ( size % pagesize == 0 ){
+
+        nfc_write( addr_l, NFC_ADDRL );
+        writel( count, dst );
+        memcpy( dst + 4, src, pagesize - 4); 
+        nfc_dma_tx();
+
+        src += pagesize - 4;
+        size -= pagesize;
+
+        for ( i = 0; i < size/pagesize; i++ ){
+            nfc_write( addr_l + pagesize * ( i + 1 ), NFC_ADDRL);
+            memcpy( dst, src + pagesize * i, pagesize); 
+            nfc_dma_tx();
+
+            DBG_OUT("addr:%x src:%p size:%x\n",  addr_l + pagesize * ( i + 1 ), 
+                src + pagesize * i, pagesize);
+        }
+    }
+    else{
+
+        if ( size < pagesize ){
+            nfc_write( addr_l, NFC_ADDRL );
+            writel( count, dst );
+            memcpy( dst+4, src, count); 
+            nfc_dma_tx();
+        }
+        else{
+            nfc_write( addr_l, NFC_ADDRL );
+            writel( count, dst );
+            memcpy( dst+4, src, pagesize - 4); 
+            nfc_dma_tx();
+
+            src += pagesize - 4;
+            size -= pagesize;
+
+            for ( i = 0; i < size/pagesize; i++ ){
+                nfc_write( addr_l + pagesize * ( i + 1 ), NFC_ADDRL);
+                memcpy( dst, src + pagesize * i, pagesize); 
+                nfc_dma_tx();
+
+                DBG_OUT("addr:%x src:%p size:%x\n",  addr_l + pagesize * ( i + 1 ), 
+                        src + pagesize * i, pagesize);
+            }
+
+            nfc_write( addr_l + pagesize * ( i + 1 ), NFC_ADDRL);
+            memcpy( dst, src + pagesize * i, size%pagesize ); 
+            nfc_dma_tx();
+
+            DBG_OUT("addr:%x src:%p size:%x\n",  addr_l + pagesize * ( i + 1 ), 
+                    src + pagesize * i, size % pagesize );
+        }
+    }
+
+
+    /* first dma tx includeing "count" */
 
 	return (ssize_t)count;
 }
@@ -452,17 +532,18 @@ static ssize_t nfcdrv_write(struct file *file, const char __user *usr_buffer,
 */
 static long nfcdrv_ioctl(struct file* file, unsigned int cmd, unsigned long arg)
 {
+    DBG_OUT("cmd:%x\n", cmd);
 
     switch (cmd) {
         case NFC_IOC_CMD_READID:
             memset(buf_base, 0, 0x10);
             command = NAND_CMD_READID;
-            nfc_send_cmd_readid();
+            *((__user uint *)arg) = nfc_send_cmd_readid();
             break;
 
         case NFC_IOC_CMD_STATUS:
             command = NAND_CMD_STATUS;
-            nfc_send_cmd_status();
+            *((__user uint *)arg) = nfc_send_cmd_status();
             break;
 
         case NFC_IOC_CMD_RESET:
@@ -501,6 +582,7 @@ static struct miscdevice nfcdrv_dev =
 static int __init validate_configs ( void )
 {
 
+    DBG_OUT("entry\n");
 
     /* register NFC_CON */
 
@@ -607,6 +689,8 @@ static int __init nfcdrv_init(void)
 #endif
     int     ret;
 
+    DBG_OUT("entry\n");
+
     validate_configs ();
     
     nfc_init();
@@ -637,6 +721,12 @@ static int __init nfcdrv_init(void)
 */
 static void __exit nfcdrv_exit(void)
 {
+    DBG_OUT("entry\n");
+
+#ifdef CONFIG_PROC_FS
+	remove_proc_entry("driver/nfc", NULL);
+#endif
+
     misc_deregister(&nfcdrv_dev);
     nfc_controller_enable(0);
 }

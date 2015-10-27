@@ -11,15 +11,12 @@
 #include <linux/init.h>
 #include <linux/slab.h>
 #include <linux/module.h>
-#include <linux/mtd/mtd.h>
-#include <linux/mtd/nand.h>
 #include <linux/delay.h>
 #include <linux/dma-mapping.h>
 #include <asm/io.h>
 #include <asm/setup.h>
 #include <asm/errno.h>
 #include <linux/platform_device.h>
-#include <linux/mtd/partitions.h>
 #include <mach/clkdev.h>
 #include <linux/clk.h>
 #include <linux/clkdev.h>
@@ -28,6 +25,8 @@
 #include <linux/miscdevice.h>
 #include <linux/seq_file.h>
 #include <linux/proc_fs.h>
+
+#include "nfc_usr.h" 
 
 #ifdef __cplusplus
 #if __cplusplus
@@ -69,7 +68,6 @@ extern "C" {
 #define PAGESIZE_4K     0x02
 #define PAGESIZE_8K     0x03
 #define PAGESIZE_16K    0x04
-
 
 #define NFC_CON_BUS_WIDTH_SHIFT     (4)
 #define NFC_CON_BUS_WIDTH_MASK      (0x01)
@@ -356,13 +354,14 @@ extern "C" {
 
 #define NFC_MEM_CTRL                            0xcc
 
+/* read nand id or nand status, return from nand data length */
+#define NFC_NANDINFO_LEN             0x04
+
 /* ??? - begin */
 
 #define NFC_RANDOMIZER                           0xC0
 #define NFC_RANDOMIZER_PAD           0x02
 #define NFC_RANDOMIZER_ENABLE        0x01
-/* read nand id or nand status, return from nand data length */
-#define NFC_NANDINFO_LEN             0x10
 
 #define NFC_BOOT_CFG                             0xC4
 #define NFC_BOOT_CFG_RANDOMIZER_PAD         0x01
@@ -592,17 +591,17 @@ do { \
 #define PR_MSG(_fmt, arg...) \
 	printk(_fmt, ##arg)
 
-int nfc_nand_init(struct nand_chip *chip);
-
-
 #define DEFAULT_PAGESIZE    PAGESIZE_2K
 #define DEFAULT_RW_HCNT     (3)
 #define DEFAULT_R_LCNT      (7)
 #define DEFAULT_W_LCNT      (0x05)
 
-#define NFC_IOC_CMD_READID  0x11
-#define NFC_IOC_CMD_RESET   0x12
-#define NFC_IOC_CMD_STATUS  0x13
+
+#define NAND_CMD_READID         0x90
+#define NAND_CMD_STATUS         0x70
+#define NAND_CMD_RESET          0xff
+#define NAND_CMD_FRAMESTART     0x80
+#define MAX_FRAME_SIZE          (8*1024*124)
 
 #ifdef __cplusplus
 #if __cplusplus
