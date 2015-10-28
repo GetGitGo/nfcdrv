@@ -29,6 +29,7 @@ int main(int argc , char* argv[])
         return -1;
     }
 
+#if 0
     size = 1024;
     ret = write( fd, buffer, size);
     dbgout("write size:0x%x ret:0x%x\n", size, ret);
@@ -77,14 +78,16 @@ int main(int argc , char* argv[])
     size = 1024*1024 - 0x555;
     ret = write( fd, buffer, size);
     dbgout("write size:0x%x ret:0x%x\n", size, ret);
-
+#endif
 
     req = NFC_IOC_CMD_RESET;
-    ioctl( fd, req, &ret ); 
-    dbgout("ioctl req:0x%x ret:0x%x\n", req, ret);
+    ioctl( fd, req, NULL ); 
+    dbgout("ioctl req:0x%x\n", req );
+
     req = NFC_IOC_CMD_READID;
     ioctl( fd, req, &ret ); 
     dbgout("ioctl req:0x%x ret:0x%x\n", req, ret);
+
     req = NFC_IOC_CMD_STATUS;
     ioctl( fd, req, &ret ); 
     dbgout("ioctl req:0x%x ret:0x%x\n", req, ret);

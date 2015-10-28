@@ -8,7 +8,6 @@
 
 #define NFC_DRIVER_VERSION	 "1.0"
 
-
 static volatile int * reg_base;
 static char * buf_base;
 
@@ -20,81 +19,68 @@ static unsigned int dma_buffer;
 
 /* configure variables of register NFC_CON */
 
-static uint pagesize = DEFAULT_PAGESIZE;
-module_param(pagesize, uint, S_IRUGO);
-MODULE_PARM_DESC(pagesize,
-		 "nfc register NFC_CON:page_size 1:2K 2:3K 3:8K 4:16K");
+static uint n_pagesize = DEFAULT_PAGESIZE;
+module_param(n_pagesize, uint, S_IRUGO);
+MODULE_PARM_DESC(n_pagesize, "nfc register NFC_CON:page_size 1:2K 2:3K 3:8K 4:16K");
 
 /* configure variables of register NFC_PWIDTH */
 
 static uint rw_hcnt = DEFAULT_RW_HCNT;
 module_param(rw_hcnt, uint, S_IRUGO);
-MODULE_PARM_DESC(rw_hcnt,
-		 "nfc register NFC_PWIDTH:rw_hcnt 0x1~0xf: 2~16 timing circles");
+MODULE_PARM_DESC(rw_hcnt, "nfc register NFC_PWIDTH:rw_hcnt 0x1~0xf: 2~16 timing circles");
 
 static uint r_lcnt = DEFAULT_R_LCNT;
 module_param(r_lcnt, uint, S_IRUGO);
-MODULE_PARM_DESC(r_lcnt,
-		 "nfc register NFC_PWIDTH:r_lcnt 0x2~0xf: 3~16 timing circles");
+MODULE_PARM_DESC(r_lcnt, "nfc register NFC_PWIDTH:r_lcnt 0x2~0xf: 3~16 timing circles");
 
 static uint w_lcnt = DEFAULT_W_LCNT;
 module_param(w_lcnt, uint, S_IRUGO);
-MODULE_PARM_DESC(w_lcnt,
-		 "nfc register NFC_PWIDTH:w_lcnt 0x1~0xf: 2~16 timing circles");
+MODULE_PARM_DESC(w_lcnt, "nfc register NFC_PWIDTH:w_lcnt 0x1~0xf: 2~16 timing circles");
 
 
 /* configure variables of register NFC_OPIDLE */
 
 static uint frb_wait = DEFAULT_FRB_WAIT;
 module_param(frb_wait, uint, S_IRUGO);
-MODULE_PARM_DESC(frb_wait,
-		 "nfc register NFC_OPIDLE:frb_wait 0x0~0xf: frb_wait*8 timing circles");
+MODULE_PARM_DESC(frb_wait, "nfc register NFC_OPIDLE:frb_wait 0x0~0xf: frb_wait*8 timing circles");
 
 static uint cmd1_wait = DEFAULT_CMD1_WAIT;
 module_param(cmd1_wait, uint, S_IRUGO);
-MODULE_PARM_DESC(cmd1_wait,
-		 "nfc register NFC_OPIDLE:cmd1_wait 0x0~0xf: 1~16 timing circles");
+MODULE_PARM_DESC(cmd1_wait, "nfc register NFC_OPIDLE:cmd1_wait 0x0~0xf: 1~16 timing circles");
 
 static uint addr_wait = DEFAULT_ADDR_WAIT;
 module_param(addr_wait, uint, S_IRUGO);
-MODULE_PARM_DESC(addr_wait,
-		 "nfc register NFC_OPIDLE:addr_wait 0x0~0xf: addr_wait*8 timing circles");
+MODULE_PARM_DESC(addr_wait, "nfc register NFC_OPIDLE:addr_wait 0x0~0xf: addr_wait*8 timing circles");
 
 static uint cmd2_wait = DEFAULT_CMD2_WAIT;
 module_param(cmd2_wait, uint, S_IRUGO);
-MODULE_PARM_DESC(cmd2_wait,
-		 "nfc register NFC_OPIDLE:cmd2_wait 0x0~0xf: 1~16 timing circles");
+MODULE_PARM_DESC(cmd2_wait, "nfc register NFC_OPIDLE:cmd2_wait 0x0~0xf: 1~16 timing circles");
 
 static uint wait_ready_wait = DEFAULT_WAIT_READY_WAIT;
 module_param(wait_ready_wait, uint, S_IRUGO);
-MODULE_PARM_DESC(wait_ready_wait,
-		 "nfc register NFC_OPIDLE:wait_ready_wait 0x0~0xf: wait_ready_wait*8 timing circles");
+MODULE_PARM_DESC(wait_ready_wait, "nfc register NFC_OPIDLE:wait_ready_wait 0x0~0xf: wait_ready_wait*8 timing circles");
 
 /* configure variables of register NFC_ADDRL */
 
 static uint addr_l = DEFAULT_ADDRL;
 module_param(addr_l, uint, S_IRUGO);
-MODULE_PARM_DESC(addr_l,
-		 "nfc register NFC_ADDRL:addr_l 31:0");
+MODULE_PARM_DESC(addr_l, "nfc register NFC_ADDRL:addr_l 31:0");
 
 /* configure variables of register NFC_ADDRH */
 
 static uint addr_h = DEFAULT_ADDRH;
 module_param(addr_h, uint, S_IRUGO);
-MODULE_PARM_DESC(addr_h,
-		 "nfc register NFC_ADDRH:addr_h 7:0");
+MODULE_PARM_DESC(addr_h,"nfc register NFC_ADDRH:addr_h 7:0");
 
 /* configure variables of register NFC_OP */
 
 static uint chipselect = 0;
 module_param(chipselect, uint, S_IRUGO);
-MODULE_PARM_DESC(uint,
-		 "nfc register NFC_OP:chipselect");
+MODULE_PARM_DESC(uint, "nfc register NFC_OP:chipselect");
 
 static uint addr_cycle = 4;
 module_param(addr_cycle, uint, S_IRUGO);
-MODULE_PARM_DESC(addr_cycle,
-		 "nfc register NFC_OP:addr_cycle 0:cs0 1:cs1");
+MODULE_PARM_DESC(addr_cycle, "nfc register NFC_OP:addr_cycle 0:cs0 1:cs1");
 
 /*
 * nfc_contoller_enable - Enable or disable nand flash controller
@@ -120,7 +106,7 @@ static void nfc_controller_enable(int enable)
 */
 static void nfc_dma_tx( void )
 {
-	unsigned long reg_val;
+	unsigned int reg_val;
 	unsigned int dma_addr = (unsigned int)dma_buffer;
 
 	nfc_write( dma_addr, NFC_BADDR_D0 );
@@ -222,7 +208,7 @@ static int nfc_send_cmd_reset( void )
 	unsigned int regval;
 
     DBG_OUT("entry\n");
-
+    
 	nfc_write( NAND_CMD_RESET, NFC_CMD);
 
 	/* need to config NFC_OP_WAIT_READY_EN */
@@ -249,21 +235,19 @@ static int nfc_init( void )
 
 	nfc_controller_enable(1);
 
-    /* reg_base = ioremap(NFC_REG_BASE_ADDRESS, NFC_REG_SIZE);
+    reg_base = ioremap(NFC_REG_BASE_ADDRESS, NFC_REG_SIZE);
 	if (!reg_base) {
 		PR_BUG("ioremap failed\n");
 		return -1;
-	} */
-	reg_base = (int *)IO_ADDRESS(NFC_REG_BASE_ADDRESS);
+	}
 
-	/* buf_base = ioremap(NFC_BUFFER_BASE_ADDRESS, NFC_BUFFER_SIZE);
+	buf_base = ioremap(NFC_BUFFER_BASE_ADDRESS, NFC_BUFFER_SIZE);
 	if (!buf_base) {
 		PR_BUG("ioremap failed\n");
 		return -1;
-	} */
-	buf_base = (char *)IO_ADDRESS(NFC_BUFFER_BASE_ADDRESS);
+	}
 
-	buffer = dma_alloc_coherent(NULL, pagesize,
+	buffer = dma_alloc_coherent(NULL, n_pagesize,
 		&dma_buffer, GFP_KERNEL);
 	if (!buffer) {
 		PR_BUG("Can't malloc memory for NAND driver.");
@@ -274,7 +258,7 @@ static int nfc_init( void )
         reg_base, buf_base, buffer, dma_buffer);
 
 	nfc_write(( OP_MODE_NORMAL << NFC_CON_OP_MODE_SHIFT ) 
-            | ( pagesize << NFC_CON_PAGE_SIZE_SHIFT )
+            | ( n_pagesize << NFC_CON_PAGE_SIZE_SHIFT )
             | ( BUS_WIDTH_8BIT << NFC_CON_BUS_WIDTH_SHIFT )       
             | ( CS_CTRL_BUSY_0 << NFC_CON_CS_CTRL_SHIFT ) 
             | ( RB_SEL_EXCLUDED << NFC_CON_RB_SEL_SHIFT )
@@ -347,22 +331,22 @@ static const struct file_operations nfcdrv_proc_fops = {
 */
 static int nfcdrv_proc_show(struct seq_file *seq, void *v)
 {
-	seq_printf(seq, "NFC REGISTER:\n");
+	seq_printf(seq, "NFC REGISTER: name :addr:value (HEX)\n");
 
 #define SEQ_OUT_4REG(reg1, reg2, reg3, reg4) \
     { \
-	    seq_printf(seq, #reg1 ":%08x  ", nfc_read(reg1)); \
-	    seq_printf(seq, #reg2 ":%08x  ", nfc_read(reg2)); \
-	    seq_printf(seq, #reg3 ":%08x  ", nfc_read(reg3)); \
-	    seq_printf(seq, #reg4 ":%08x  ", nfc_read(reg4)); \
+	    seq_printf(seq, "%-17s:%02x:%08x  ", #reg1, reg1, nfc_read(reg1)); \
+	    seq_printf(seq, "%-17s:%02x:%08x  ", #reg2, reg2, nfc_read(reg2)); \
+	    seq_printf(seq, "%-17s:%02x:%08x  ", #reg3, reg3, nfc_read(reg3)); \
+	    seq_printf(seq, "%-17s:%02x:%08x  ", #reg4, reg4, nfc_read(reg4)); \
 	    seq_printf(seq, "\n"); \
     }
 
 #define SEQ_OUT_3REG(reg1, reg2, reg3) \
     { \
-	    seq_printf(seq, #reg1 ":%08x  ", nfc_read(reg1)); \
-	    seq_printf(seq, #reg2 ":%08x  ", nfc_read(reg2)); \
-	    seq_printf(seq, #reg3 ":%08x  ", nfc_read(reg3)); \
+	    seq_printf(seq, "%-17s:%02x:%08x  ", #reg1, reg1, nfc_read(reg1)); \
+	    seq_printf(seq, "%-17s:%02x:%08x  ", #reg2, reg2, nfc_read(reg2)); \
+	    seq_printf(seq, "%-17s:%02x:%08x  ", #reg3, reg3, nfc_read(reg3)); \
 	    seq_printf(seq, "\n"); \
     }
 
@@ -377,6 +361,29 @@ static int nfcdrv_proc_show(struct seq_file *seq, void *v)
     SEQ_OUT_4REG( NFC_BOOT_SET,     NFC_LP_CTRL,        NFC_ERR_NUM0_BUF0,  NFC_ERR_NUM1_BUF0);
     SEQ_OUT_4REG( NFC_ERR_NUM0_BUF1,NFC_ERR_NUM1_BUF1,  NFC_RB_MODE,        NFC_BADDR_D1);
     SEQ_OUT_3REG( NFC_BADDR_D2,     NFC_BADDR_D3,       NFC_MEM_CTRL);
+
+#define SEQ_OUT_4V(v1, v2, v3, v4) \
+    { \
+	    seq_printf(seq, "%-17s:%08x  ", #v1, v1); \
+	    seq_printf(seq, "%-17s:%08x  ", #v2, v2); \
+	    seq_printf(seq, "%-17s:%08x  ", #v3, v3); \
+	    seq_printf(seq, "%-17s:%08x  ", #v4, v4); \
+	    seq_printf(seq, "\n"); \
+    }
+
+#define SEQ_OUT_1V( v1 ) \
+    { \
+	    seq_printf(seq, "%-17s:%08x  ", #v1, v1); \
+	    seq_printf(seq, "\n"); \
+    }
+
+
+    seq_printf(seq, "\nCONFIGURE ITEMS: name :value (HEX)\n");
+
+    SEQ_OUT_4V(n_pagesize,w_lcnt,r_lcnt,rw_hcnt);
+    SEQ_OUT_4V(frb_wait, cmd1_wait, addr_wait, cmd2_wait); 
+    SEQ_OUT_4V(wait_ready_wait, addr_l, addr_h, addr_cycle); 
+    SEQ_OUT_1V(chipselect);
 
     return 0;
 }
@@ -461,28 +468,28 @@ static ssize_t nfcdrv_write(struct file *file, const char __user *usr_buffer,
 
     DBG_OUT("src:%p size:%x\n", src, size);
 
-    if ( size % pagesize == 0 ){
+    if ( size % n_pagesize == 0 ){
 
         nfc_write( addr_l, NFC_ADDRL );
         writel( count, dst );
-        memcpy( dst + 4, src, pagesize - 4); 
+        memcpy( dst + 4, src, n_pagesize - 4); 
         nfc_dma_tx();
 
-        src += pagesize - 4;
-        size -= pagesize;
+        src += n_pagesize - 4;
+        size -= n_pagesize;
 
-        for ( i = 0; i < size/pagesize; i++ ){
-            nfc_write( addr_l + pagesize * ( i + 1 ), NFC_ADDRL);
-            memcpy( dst, src + pagesize * i, pagesize); 
+        for ( i = 0; i < size/n_pagesize; i++ ){
+            nfc_write( addr_l + n_pagesize * ( i + 1 ), NFC_ADDRL);
+            memcpy( dst, src + n_pagesize * i, n_pagesize); 
             nfc_dma_tx();
 
-            DBG_OUT("addr:%x src:%p size:%x\n",  addr_l + pagesize * ( i + 1 ), 
-                src + pagesize * i, pagesize);
+            DBG_OUT("addr:%x src:%p size:%x\n",  addr_l + n_pagesize * ( i + 1 ), 
+                src + n_pagesize * i, n_pagesize);
         }
     }
     else{
 
-        if ( size < pagesize ){
+        if ( size < n_pagesize ){
             nfc_write( addr_l, NFC_ADDRL );
             writel( count, dst );
             memcpy( dst+4, src, count); 
@@ -491,27 +498,27 @@ static ssize_t nfcdrv_write(struct file *file, const char __user *usr_buffer,
         else{
             nfc_write( addr_l, NFC_ADDRL );
             writel( count, dst );
-            memcpy( dst+4, src, pagesize - 4); 
+            memcpy( dst+4, src, n_pagesize - 4); 
             nfc_dma_tx();
 
-            src += pagesize - 4;
-            size -= pagesize;
+            src += n_pagesize - 4;
+            size -= n_pagesize;
 
-            for ( i = 0; i < size/pagesize; i++ ){
-                nfc_write( addr_l + pagesize * ( i + 1 ), NFC_ADDRL);
-                memcpy( dst, src + pagesize * i, pagesize); 
+            for ( i = 0; i < size/n_pagesize; i++ ){
+                nfc_write( addr_l + n_pagesize * ( i + 1 ), NFC_ADDRL);
+                memcpy( dst, src + n_pagesize * i, n_pagesize); 
                 nfc_dma_tx();
 
-                DBG_OUT("addr:%x src:%p size:%x\n",  addr_l + pagesize * ( i + 1 ), 
-                        src + pagesize * i, pagesize);
+                DBG_OUT("addr:%x src:%p size:%x\n",  addr_l + n_pagesize * ( i + 1 ), 
+                        src + n_pagesize * i, n_pagesize);
             }
 
-            nfc_write( addr_l + pagesize * ( i + 1 ), NFC_ADDRL);
-            memcpy( dst, src + pagesize * i, size%pagesize ); 
+            nfc_write( addr_l + n_pagesize * ( i + 1 ), NFC_ADDRL);
+            memcpy( dst, src + n_pagesize * i, size%n_pagesize ); 
             nfc_dma_tx();
 
-            DBG_OUT("addr:%x src:%p size:%x\n",  addr_l + pagesize * ( i + 1 ), 
-                    src + pagesize * i, size % pagesize );
+            DBG_OUT("addr:%x src:%p size:%x\n",  addr_l + n_pagesize * ( i + 1 ), 
+                    src + n_pagesize * i, size % n_pagesize );
         }
     }
 
@@ -581,16 +588,15 @@ static struct miscdevice nfcdrv_dev =
 */
 static int __init validate_configs ( void )
 {
-
     DBG_OUT("entry\n");
 
     /* register NFC_CON */
 
-    if ( pagesize != PAGESIZE_2K || pagesize != PAGESIZE_4K ||
-         pagesize != PAGESIZE_8K || pagesize != PAGESIZE_16K ){
-		PR_BUG("invalid pagesize: 0x%x, set to PAGESIZE_2K:0x%x\n", 
-            pagesize, PAGESIZE_2K);
-	    pagesize = PAGESIZE_2K;
+    if ( n_pagesize != PAGESIZE_2K && n_pagesize != PAGESIZE_4K && 
+         n_pagesize != PAGESIZE_8K && n_pagesize != PAGESIZE_16K ){
+		PR_BUG("invalid n_pagesize: 0x%x, set to PAGESIZE_2K:0x%x\n", 
+            n_pagesize, PAGESIZE_2K);
+	    n_pagesize = PAGESIZE_2K;
     }
 
     /* register NFC_PWIDTH */
@@ -610,8 +616,8 @@ static int __init validate_configs ( void )
 	    rw_hcnt = DEFAULT_RW_HCNT;
     }
 
-    DBG_OUT("pagesize:0x%02x w_lcnt:0x%02x r_lcnt:0x%02x rw_hcnt:0x%02x\n",
-        pagesize,w_lcnt,r_lcnt,rw_hcnt);
+    DBG_OUT("n_pagesize:0x%02x w_lcnt:0x%02x r_lcnt:0x%02x rw_hcnt:0x%02x\n",
+        n_pagesize,w_lcnt,r_lcnt,rw_hcnt);
 
     /* register NFC_OPIDLE */
 
@@ -660,7 +666,7 @@ static int __init validate_configs ( void )
 
     /* register NFC_OP */
 
-	if ( addr_cycle != 4 || addr_cycle != 5 ){
+	if ( addr_cycle != 4 && addr_cycle != 5 ){
 		PR_BUG("invalid addr_cycle: 0x%x, set to 4\n", addr_cycle);
 	    addr_cycle = 4;
     }
@@ -692,14 +698,8 @@ static int __init nfcdrv_init(void)
     DBG_OUT("entry\n");
 
     validate_configs ();
-    
-    nfc_init();
 
-    ret = misc_register(&nfcdrv_dev);
-    if (ret != 0) {
-        printk("register i2c device failed with %#x!\n", ret);
-        return -1;
-    }
+    nfc_init();
 
 #ifdef CONFIG_PROC_FS
 /*
@@ -707,9 +707,15 @@ static int __init nfcdrv_init(void)
  */
 	ent = proc_create("driver/nfc", 0, NULL, &nfcdrv_proc_fops);
 	if (!ent) {
-        printk(KERN_WARNING "rtc: Failed to register with procfs.\n");
+        DBG_OUT(KERN_WARNING "rtc: Failed to register with procfs.\n");
     }
 #endif
+
+    ret = misc_register(&nfcdrv_dev);
+    if (ret != 0) {
+        DBG_OUT("register i2c device failed with %#x!\n", ret);
+        return -1;
+    }
 
     return 0;
 }
@@ -734,7 +740,6 @@ static void __exit nfcdrv_exit(void)
 module_init(nfcdrv_init);
 module_exit(nfcdrv_exit);
 
-MODULE_AUTHOR("www.vhd.com.cn");
 MODULE_DESCRIPTION("nfc Driver");
 MODULE_LICENSE("GPL");
-MODULE_VERSION(NFC_DRIVER_VERSION);
+MODULE_AUTHOR("www.vhd.com.cn");

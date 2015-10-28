@@ -34,6 +34,30 @@ extern "C" {
 #endif
 #endif /* __cplusplus */
 
+#define DBG_OUT(fmt, args...) do {\
+	pr_notice("%s(%d): " fmt, __func__, __LINE__, ##args); \
+} while (0)
+
+#if 1
+#  define DBG_MSG(_fmt, arg...)
+#else
+#  define DBG_MSG(_fmt, arg...) \
+	printk(KERN_INFO "%s(%d): " _fmt, __func__, __LINE__, ##arg);
+#endif
+
+#define PR_BUG(fmt, args...) do {\
+	pr_err("%s(%d): bug " fmt, __func__, __LINE__, ##args); \
+	asm("b ."); \
+} while (0)
+
+#define PR_ERR(fmt, args...) do {\
+	pr_err("%s(%d): " fmt, __func__, __LINE__, ##args); \
+} while (0)
+
+#define PR_MSG(_fmt, arg...) \
+	printk(_fmt, ##arg)
+
+
 #define NFC_PERIPHERY_REGBASE		IO_ADDRESS(0x20030000)
 
 #define PERI_CRG52                  (0x00D0)
@@ -550,7 +574,10 @@ do { \
 	readl((char *)reg_base + (reg))
 
 #define nfc_write(value, reg) \
-	writel((value), (char *)reg_base + (reg))
+{ \
+    DBG_OUT("nfc_write v:0x%08X r:0x%02x\n", value, reg ); \
+	writel((value), (char *)reg_base + (reg)); \
+}
 
 #define NFC_CMD_SEQ(cmd0, cmd1)        \
 	(((cmd0) & 0xFF) | ((cmd1) & 0xFF) << 8)
@@ -568,28 +595,6 @@ do { \
 	} \
 } while (0)
 
-#define DBG_OUT(fmt, args...) do {\
-	printk("%s(%d): " fmt, __FILE__, __LINE__, ##args); \
-} while (0)
-
-#if 1
-#  define DBG_MSG(_fmt, arg...)
-#else
-#  define DBG_MSG(_fmt, arg...) \
-	printk(KERN_INFO "%s(%d): " _fmt, __FILE__, __LINE__, ##arg);
-#endif
-
-#define PR_BUG(fmt, args...) do {\
-	printk("%s(%d): bug " fmt, __FILE__, __LINE__, ##args); \
-	asm("b ."); \
-} while (0)
-
-#define PR_ERR(fmt, args...) do {\
-	printk(KERN_ERR "%s(%d): " fmt, __FILE__, __LINE__, ##args); \
-} while (0)
-
-#define PR_MSG(_fmt, arg...) \
-	printk(_fmt, ##arg)
 
 #define DEFAULT_PAGESIZE    PAGESIZE_2K
 #define DEFAULT_RW_HCNT     (3)
