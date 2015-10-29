@@ -430,6 +430,36 @@ static int  nfcdrv_close(struct inode* inode, struct file* file)
 }
 
 /*
+* nfc_pagesize_i2v - map index to value 
+*
+* @param index:
+*
+*/
+static int nfc_pagesize_i2v( int index )
+{
+    switch( index ){
+        case PAGESIZE_2K: 
+            return 2*1024; 
+            break;
+        case PAGESIZE_4K:
+            return 4*1024; 
+            break;
+        case PAGESIZE_8K: 
+            return 8*1024; 
+            break;
+        case PAGESIZE_16K:
+            return 16*1024; 
+            break;
+        default:
+            return 2*1024; 
+            break;
+    }
+
+    return -1;
+}
+
+
+/*
 * nfc_write - driver's file operation "write" 
 *
 * @param file:
@@ -446,6 +476,7 @@ static ssize_t nfcdrv_write(struct file *file, const char __user *usr_buffer,
     char * dst = buffer;
     char * src = (char * )usr_buffer;
     size_t size = count+4;
+    int v_psize = nfc_pagesize_i2v( n_pagesize );
 
     DBG_OUT("entry\n");
 
@@ -466,59 +497,64 @@ static ssize_t nfcdrv_write(struct file *file, const char __user *usr_buffer,
 
 	nfc_write( addr_h, NFC_ADDRH );
 
-    DBG_OUT("src:%p size:%x\n", src, size);
+    DBG_OUT("src:0x%p size:0x%x\n", src, size);
 
-    if ( size % n_pagesize == 0 ){
+    if ( size % v_psize == 0 ){
 
-        nfc_write( addr_l, NFC_ADDRL );
+       nfc_write( addr_l, NFC_ADDRL );
         writel( count, dst );
-        memcpy( dst + 4, src, n_pagesize - 4); 
-        nfc_dma_tx();
+        memcpy( dst + 4, src, v_psize - 4); 
 
-        src += n_pagesize - 4;
-        size -= n_pagesize;
+//      nfc_dma_tx();
 
-        for ( i = 0; i < size/n_pagesize; i++ ){
-            nfc_write( addr_l + n_pagesize * ( i + 1 ), NFC_ADDRL);
-            memcpy( dst, src + n_pagesize * i, n_pagesize); 
-            nfc_dma_tx();
+        DBG_OUT("addr:0x%x src:0 size:0x%x\n",  addr_l, v_psize - 4);
 
-            DBG_OUT("addr:%x src:%p size:%x\n",  addr_l + n_pagesize * ( i + 1 ), 
-                src + n_pagesize * i, n_pagesize);
+        src += v_psize - 4;
+        size -= v_psize;
+
+        for ( i = 0; i < size/v_psize; i++ ){
+            nfc_write( addr_l + v_psize * ( i + 1 ), NFC_ADDRL);
+            memcpy( dst, src + v_psize * i, v_psize); 
+//            nfc_dma_tx();
+
+            DBG_OUT("addr:0x%x src:0x%x size:0x%x\n",  addr_l + v_psize * ( i + 1 ), 
+                v_psize * i, v_psize);
         }
     }
     else{
 
-        if ( size < n_pagesize ){
+        if ( size < v_psize ){
             nfc_write( addr_l, NFC_ADDRL );
             writel( count, dst );
             memcpy( dst+4, src, count); 
-            nfc_dma_tx();
+        //    nfc_dma_tx();
+            DBG_OUT("addr:0x%x src:0 size:0x%x\n",  addr_l, count);
         }
         else{
             nfc_write( addr_l, NFC_ADDRL );
             writel( count, dst );
-            memcpy( dst+4, src, n_pagesize - 4); 
-            nfc_dma_tx();
+            memcpy( dst+4, src, v_psize - 4); 
+            //nfc_dma_tx();
+            DBG_OUT("addr:0x%x src:0 size:0x%x\n",  addr_l, v_psize - 4);
 
-            src += n_pagesize - 4;
-            size -= n_pagesize;
+            src += v_psize - 4;
+            size -= v_psize;
 
-            for ( i = 0; i < size/n_pagesize; i++ ){
-                nfc_write( addr_l + n_pagesize * ( i + 1 ), NFC_ADDRL);
-                memcpy( dst, src + n_pagesize * i, n_pagesize); 
-                nfc_dma_tx();
+            for ( i = 0; i < size/v_psize; i++ ){
+                nfc_write( addr_l + v_psize * ( i + 1 ), NFC_ADDRL);
+                memcpy( dst, src + v_psize * i, v_psize); 
+                //nfc_dma_tx();
 
-                DBG_OUT("addr:%x src:%p size:%x\n",  addr_l + n_pagesize * ( i + 1 ), 
-                        src + n_pagesize * i, n_pagesize);
+                DBG_OUT("addr:0x%x src:0x%x size:0x%x\n",  addr_l + v_psize * ( i + 1 ), 
+                        v_psize * i, v_psize);
             }
 
-            nfc_write( addr_l + n_pagesize * ( i + 1 ), NFC_ADDRL);
-            memcpy( dst, src + n_pagesize * i, size%n_pagesize ); 
-            nfc_dma_tx();
+            nfc_write( addr_l + v_psize * ( i + 1 ), NFC_ADDRL);
+            memcpy( dst, src + v_psize * i, size%v_psize ); 
+            //nfc_dma_tx();
 
-            DBG_OUT("addr:%x src:%p size:%x\n",  addr_l + n_pagesize * ( i + 1 ), 
-                    src + n_pagesize * i, size % n_pagesize );
+            DBG_OUT("addr:0x%x src:0x%x size:0x%x\n",  addr_l + v_psize * ( i + 1 ), 
+                    v_psize * i, size % v_psize );
         }
     }
 

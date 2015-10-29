@@ -575,7 +575,7 @@ do { \
 
 #define nfc_write(value, reg) \
 { \
-    DBG_OUT("nfc_write v:0x%08X r:0x%02x\n", value, reg ); \
+    /* DBG_OUT("nfc_write v:0x%08X r:0x%02x\n", value, reg ); */ \
 	writel((value), (char *)reg_base + (reg)); \
 }
 
