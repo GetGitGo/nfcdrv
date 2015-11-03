@@ -58,6 +58,41 @@ extern "C" {
 	printk(_fmt, ##arg)
 
 
+/*-------- pin mux info --------*/
+/*  base address: 0x200F_0000
+0x10C [0] RW muxctrl_reg67 0:NF_DQ0; 1:GPIO5_0。
+
+0x110 [0] RW muxctrl_reg68 0:NF_DQ1; 1:GPIO5_1
+
+0x114 [0] RW muxctrl_reg69 0:NF_DQ2; 1:GPIO5_2。
+
+0x118 [0] RW muxctrl_reg70 0:NF_DQ3; 1:GPIO5_3。
+
+0x11C [0] RW muxctrl_reg71 0:NF_DQ4; 1:GPIO5_4。
+
+0x120 [0] RW muxctrl_reg72 0:NF_DQ5; 1:GPIO5_5。
+
+0x124 [0] RW muxctrl_reg73 0:NF_DQ6; 1:GPIO5_6。
+
+0x128 [0] RW muxctrl_reg74 0:NF_DQ7; 1:GPIO5_7。
+
+0x12C [0] RW muxctrl_reg75 0:NF_RDY0; 1:GPIO3_0。
+
+0x130 [0] RW muxctrl_reg76 0:NF_RDY1; 1:GPIO3_1。
+
+0x134 [0] RW muxctrl_reg77 0:NF_REN; 1:GPIO3_2。
+
+0x138 [0] RW muxctrl_reg78 0:NF_CSN0; 1:GPIO3_3。
+
+0x13C [1:0] RW muxctrl_reg79 00:NF_CSN1; 01:GPIO3_4; 10:SFC_CSN0;
+
+0x140 [0] RW muxctrl_reg80 0:NF_CLE; 1:GPIO3_5。
+
+0x144 [0] RW muxctrl_reg81 0:NF_ALE; 1:GPIO3_6。
+
+0x148 [0] RW muxctrl_reg82 0:NF_WEN; 1:GPIO3_7。
+*/
+
 #define NFC_PERIPHERY_REGBASE		IO_ADDRESS(0x20030000)
 
 #define PERI_CRG52                  (0x00D0)
@@ -575,7 +610,7 @@ do { \
 
 #define nfc_write(value, reg) \
 { \
-    /* DBG_OUT("nfc_write v:0x%08X r:0x%02x\n", value, reg ); */ \
+    DBG_OUT("nfc_write v:0x%08X " #reg "(%02x)\n", value, reg ); \
 	writel((value), (char *)reg_base + (reg)); \
 }
 

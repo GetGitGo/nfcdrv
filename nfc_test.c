@@ -20,7 +20,7 @@ int main(int argc , char* argv[])
     int fd = -1;
     int ret = 0;
     int size;
-    //int req;
+    int req;
 
 
     fd = open("/dev/nfc", O_RDWR);
@@ -75,7 +75,7 @@ int main(int argc , char* argv[])
     dbgout("write size:0x%x ret:0x%x\n", size, ret);
 #endif
 
-#if 1 //pass
+#if 0 //pass
     size = 1024*128 - 0x12345;
     ret = write( fd, buffer, size);
     dbgout("write size:0x%x ret:0x%x\n", size, ret);
@@ -102,19 +102,22 @@ int main(int argc , char* argv[])
     dbgout("write size:0x%x ret:0x%x\n", size, ret);
 #endif
 
-#if 0 //pass
+#if 0 
     req = NFC_IOC_CMD_RESET;
     ioctl( fd, req, NULL ); 
     dbgout("ioctl req:0x%x\n", req );
+#endif
 
+#if 0 
     req = NFC_IOC_CMD_READID;
     ioctl( fd, req, &ret ); 
     dbgout("ioctl req:0x%x ret:0x%x\n", req, ret);
+#endif
 
+#if 1 
     req = NFC_IOC_CMD_STATUS;
     ioctl( fd, req, &ret ); 
     dbgout("ioctl req:0x%x ret:0x%x\n", req, ret);
-
 #endif
 
     close(fd);

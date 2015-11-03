@@ -90,8 +90,11 @@ static void nfc_controller_enable(int enable)
 {
 	unsigned int reg_val = readl(NFC_PERIPHERY_REGBASE + PERI_CRG52);
 
-	if (enable)
-		reg_val |= (PERI_CRG52_CLK_EN | PERI_CRG52_CLK_SEL_198M);
+	if (enable){
+		//reg_val |= (PERI_CRG52_CLK_EN | PERI_CRG52_CLK_SEL_198M);
+		reg_val |= PERI_CRG52_CLK_EN; 
+		reg_val &= ~PERI_CRG52_CLK_SEL_198M; // 24M clock
+    }
 	else
 		reg_val &= ~PERI_CRG52_CLK_EN;
 
@@ -230,6 +233,7 @@ static int nfc_send_cmd_reset( void )
 */
 static int nfc_init( void )
 {
+    int regv;
 
     DBG_OUT("entry\n");
 
@@ -256,6 +260,9 @@ static int nfc_init( void )
 
     DBG_OUT("reg_base:0x%p buf_base:0x%p buffer:0x%p dma_buffer:0x%x",
         reg_base, buf_base, buffer, dma_buffer);
+
+    regv = nfc_read(NFC_CON);
+    DBG_OUT("nfc_con:0x%08x\n",regv); 
 
 	nfc_write(( OP_MODE_NORMAL << NFC_CON_OP_MODE_SHIFT ) 
             | ( n_pagesize << NFC_CON_PAGE_SIZE_SHIFT )
