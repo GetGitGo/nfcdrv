@@ -88,15 +88,30 @@ MODULE_PARM_DESC(addr_cycle, "nfc register NFC_OP:addr_cycle 0:cs0 1:cs1");
 */
 static void nfc_controller_enable(int enable)
 {
-	unsigned int reg_val = readl(NFC_PERIPHERY_REGBASE + PERI_CRG52);
+	unsigned int reg_val;
+    int i;
+
+    
+    /* check pin mux */
+
+    for ( i = 0; i <= ( NFC_MUXCTRL_END - NFC_MUXCTRL_BEGIN); i += 4){
+	    reg_val = readl(NFC_MUXCTRL_REGBASE + NFC_MUXCTRL_BEGIN + i );
+        if ( reg_val != 0 ){
+	        writel(0, NFC_MUXCTRL_REGBASE + NFC_MUXCTRL_BEGIN + i );
+        }
+    }
+
+	reg_val = readl(NFC_PERIPHERY_REGBASE + PERI_CRG52);
 
 	if (enable){
 		reg_val |= (PERI_CRG52_CLK_EN | PERI_CRG52_CLK_SEL_198M);
+
 		//reg_val |= PERI_CRG52_CLK_EN; 
 		//reg_val &= ~PERI_CRG52_CLK_SEL_198M; // 24M clock
     }
-	else
+	else {
 		reg_val &= ~PERI_CRG52_CLK_EN;
+    }
 
 	writel(reg_val, (NFC_PERIPHERY_REGBASE + PERI_CRG52));
 }

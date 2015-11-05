@@ -93,6 +93,10 @@ extern "C" {
 0x148 [0] RW muxctrl_reg82 0:NF_WEN; 1:GPIO3_7。
 */
 
+#define NFC_MUXCTRL_REGBASE		IO_ADDRESS(0x200f0000)
+#define NFC_MUXCTRL_BEGIN       (0x010c)
+#define NFC_MUXCTRL_END         (0x0148)
+
 #define NFC_PERIPHERY_REGBASE		IO_ADDRESS(0x20030000)
 
 #define PERI_CRG52                  (0x00D0)
