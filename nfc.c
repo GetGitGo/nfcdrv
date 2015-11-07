@@ -136,7 +136,7 @@ static void nfc_dma_tx( void )
             | BURST4_EN 
             | BURST8_EN 
             | BURST16_EN
-            | WR_CMD_DISABLE // without cmd sequence
+        //    | WR_CMD_DISABLE // without cmd sequence
 		    | ((addr_cycle == 4 ? 1 : 0) << NFC_DMA_CTRL_ADDR_NUM_SHIFT)
 		    | (chipselect << NFC_DMA_CTRL_CS_SHIFT);
 
@@ -488,32 +488,40 @@ static int nfc_pagesize_i2v( int index )
 * @param ppos:
 # @return 
 */
-static ssize_t nfcdrv_write(struct file *file, const char __user *usr_buffer,
-			    size_t count, loff_t *ppos)
+static int nfcdrv_write( NFC_IOC_WRITE_S * arg )
 {
     int i;
 
     char * dst = buffer;
-    char * src = (char * )usr_buffer;
-    size_t size = count+4;
+    char * src = (char * )arg->data;
+    size_t size = arg->size + 4;
     int v_psize = nfc_pagesize_i2v( n_pagesize );
+
 
     DBG_OUT("entry\n");
 
-    if( usr_buffer == NULL ){
+    if( src == NULL ){
         DBG_OUT("usr_buffer NULL!\n");
         return -1;
     }
 
-    if( count == 0 ){
+    if( arg->size == 0 ){
         DBG_OUT("count 0!\n");
         return -1;
     }
 
-    if( count > MAX_FRAME_SIZE ){
+    if( size > MAX_FRAME_SIZE ){
         DBG_OUT("count exceed MAX_FRAME_SIZE(%d)!\n", MAX_FRAME_SIZE);
         return -1;
     }
+
+    addr_l = arg->addr_l & 0xffff0000;
+    addr_h = arg->addr_h;
+
+    DBG_OUT("data:%p, size:0x%x, addr_l:0x%x, addr_h:0x%x\n",
+        src, size, addr_l, addr_h);
+
+	nfc_write( NAND_CMD_FRAMESTART, NFC_CMD);
 
 	nfc_write( addr_h, NFC_ADDRH );
 
@@ -522,12 +530,12 @@ static ssize_t nfcdrv_write(struct file *file, const char __user *usr_buffer,
     if ( size % v_psize == 0 ){
 
        nfc_write( addr_l, NFC_ADDRL );
-        writel( count, dst );
+        writel( arg->size, dst );
         memcpy( dst + 4, src, v_psize - 4); 
 
         nfc_dma_tx();
 
-        DBG_OUT("addr:0x%x src:0 size:0x%x\n",  addr_l, v_psize - 4);
+        DBG_OUT("ADDRL:0x%x src:0 size:0x%x\n",  addr_l, v_psize - 4);
 
         src += v_psize - 4;
         size -= v_psize;
@@ -537,7 +545,7 @@ static ssize_t nfcdrv_write(struct file *file, const char __user *usr_buffer,
             memcpy( dst, src + v_psize * i, v_psize); 
             nfc_dma_tx();
 
-            DBG_OUT("addr:0x%x src:0x%x size:0x%x\n",  addr_l + v_psize * ( i + 1 ), 
+            DBG_OUT("ADDRL:0x%x src:0x%x size:0x%x\n",  addr_l + v_psize * ( i + 1 ), 
                 v_psize * i, v_psize);
         }
     }
@@ -545,17 +553,17 @@ static ssize_t nfcdrv_write(struct file *file, const char __user *usr_buffer,
 
         if ( size < v_psize ){
             nfc_write( addr_l, NFC_ADDRL );
-            writel( count, dst );
-            memcpy( dst+4, src, count); 
+            writel( arg->size, dst );
+            memcpy( dst+4, src, arg->size); 
             nfc_dma_tx();
-            DBG_OUT("addr:0x%x src:0 size:0x%x\n",  addr_l, count);
+            DBG_OUT("ADDRL:0x%x src:0 size:0x%x\n",  addr_l, arg->size);
         }
         else{
             nfc_write( addr_l, NFC_ADDRL );
-            writel( count, dst );
+            writel( arg->size, dst );
             memcpy( dst+4, src, v_psize - 4); 
             nfc_dma_tx();
-            DBG_OUT("addr:0x%x src:0 size:0x%x\n",  addr_l, v_psize - 4);
+            DBG_OUT("ADDRL:0x%x src:0 size:0x%x\n",  addr_l, v_psize - 4);
 
             src += v_psize - 4;
             size -= v_psize;
@@ -565,7 +573,7 @@ static ssize_t nfcdrv_write(struct file *file, const char __user *usr_buffer,
                 memcpy( dst, src + v_psize * i, v_psize); 
                 nfc_dma_tx();
 
-                DBG_OUT("addr:0x%x src:0x%x size:0x%x\n",  addr_l + v_psize * ( i + 1 ), 
+                DBG_OUT("ADDRL:0x%x src:0x%x size:0x%x\n",  addr_l + v_psize * ( i + 1 ), 
                         v_psize * i, v_psize);
             }
 
@@ -573,15 +581,12 @@ static ssize_t nfcdrv_write(struct file *file, const char __user *usr_buffer,
             memcpy( dst, src + v_psize * i, size%v_psize ); 
             nfc_dma_tx();
 
-            DBG_OUT("addr:0x%x src:0x%x size:0x%x\n",  addr_l + v_psize * ( i + 1 ), 
+            DBG_OUT("ADDRL:0x%x src:0x%x size:0x%x\n",  addr_l + v_psize * ( i + 1 ), 
                     v_psize * i, size % v_psize );
         }
     }
 
-
-    /* first dma tx includeing "count" */
-
-	return (ssize_t)count;
+	return (ssize_t)arg->size;
 }
 
 /*
@@ -595,6 +600,8 @@ static ssize_t nfcdrv_write(struct file *file, const char __user *usr_buffer,
 */
 static long nfcdrv_ioctl(struct file* file, unsigned int cmd, unsigned long arg)
 {
+    int ret = 0;
+
     DBG_OUT("cmd:%x\n", cmd);
 
     switch (cmd) {
@@ -611,14 +618,18 @@ static long nfcdrv_ioctl(struct file* file, unsigned int cmd, unsigned long arg)
 
         case NFC_IOC_CMD_RESET:
             command = NAND_CMD_RESET;
-            nfc_send_cmd_reset();
+            ret = nfc_send_cmd_reset();
+            break;
+
+        case NFC_IOC_WRITE:
+            ret = nfcdrv_write( (NFC_IOC_WRITE_S *)arg );
             break;
 
         default:
             break;
     }
 
-    return 0;
+    return ret;
 }
 
 static struct file_operations nfcdrv_fops =
@@ -626,7 +637,6 @@ static struct file_operations nfcdrv_fops =
     .owner      = THIS_MODULE,
     .open       = nfcdrv_open,
     .release    = nfcdrv_close,
-    .write      = nfcdrv_write,
     .unlocked_ioctl = nfcdrv_ioctl,
 };
 
